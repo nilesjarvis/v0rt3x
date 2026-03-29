@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube yt-dlp Bridge",
+  "version": "1.0.0",
+  "description": "Run yt-dlp for the active YouTube video via native messaging.",
+  "permissions": ["activeTab", "nativeMessaging", "contextMenus"],
+  "host_permissions": ["*://*.youtube.com/*", "*://youtu.be/*"],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "action": {
+    "default_title": "Download current YouTube video"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "ytdlp-bridge@example.local",
+      "strict_min_version": "109.0"
+    }
+  }
+}
