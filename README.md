@@ -46,3 +46,5 @@ The command is run from `/home/user/Downloads` through a native messaging host.
 
 - The host creates `/home/user/Downloads` if it does not exist.
 - If native messaging fails, reinstall by rerunning `install_native_host.sh`.
+- Error tooltips now include an error code, hint, and final yt-dlp output line for debugging.
+- For full diagnostics payloads, check Firefox extension background logs in `about:debugging`.

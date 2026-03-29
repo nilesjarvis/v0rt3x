@@ -46,6 +46,31 @@ function setStatus(title, badge, color) {
   setBadge(badge, color);
 }
 
+function truncate(text, maxLen = 220) {
+  if (typeof text !== "string") {
+    return "";
+  }
+  if (text.length <= maxLen) {
+    return text;
+  }
+  return `${text.slice(0, maxLen - 3)}...`;
+}
+
+function formatErrorStatus(msg) {
+  const error = typeof msg?.error === "string" ? msg.error : "Unknown error";
+  const code = typeof msg?.code === "string" ? msg.code : "UNKNOWN";
+  const hint = typeof msg?.hint === "string" ? msg.hint : "No hint available";
+  const details = Array.isArray(msg?.details) ? msg.details : [];
+  const detailTail = details.length > 0 ? details[details.length - 1] : "";
+
+  let full = `Download failed [${code}]: ${error}. Hint: ${hint}`;
+  if (detailTail) {
+    full += ` | Last line: ${detailTail}`;
+  }
+
+  return truncate(full);
+}
+
 function createNativePort() {
   try {
     return browser.runtime.connectNative(HOST_NAME);
@@ -95,8 +120,8 @@ function runDownload(watchId) {
     }
 
     if (type === "error") {
-      const detail = typeof msg.error === "string" ? msg.error : "Unknown error";
-      setStatus(`Download failed: ${detail}`, "ERR", "#b42318");
+      console.error("Native host error", msg);
+      setStatus(formatErrorStatus(msg), "ERR", "#b42318");
       cleanup();
       return;
     }
