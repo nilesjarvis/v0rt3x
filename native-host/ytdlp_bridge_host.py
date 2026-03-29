@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 
-DOWNLOAD_DIR = "/home/user/downloads"
+DOWNLOAD_DIR = "/home/user/Downloads"
 YT_ID_REGEX = re.compile(r"^[A-Za-z0-9_-]{11}$")
 PROGRESS_REGEX = re.compile(r"\[download\]\s+([0-9]+(?:\.[0-9]+)?)%")
 

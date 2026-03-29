@@ -4,7 +4,7 @@ This project adds a Firefox extension button that, when clicked on a YouTube vid
 
 `yt-dlp --cookies-from-browser firefox "https://www.youtube.com/watch?v=<watch-id>"`
 
-The command is run from `/home/user/downloads` through a native messaging host.
+The command is run from `/home/user/Downloads` through a native messaging host.
 
 ## What is included
 
@@ -44,5 +44,5 @@ The command is run from `/home/user/downloads` through a native messaging host.
 
 ## Notes
 
-- The host creates `/home/user/downloads` if it does not exist.
+- The host creates `/home/user/Downloads` if it does not exist.
 - If native messaging fails, reinstall by rerunning `install_native_host.sh`.
