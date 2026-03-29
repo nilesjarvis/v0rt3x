@@ -113,6 +113,12 @@ function runDownload(watchId) {
       return;
     }
 
+    if (type === "warning") {
+      const warning = typeof msg.warning === "string" ? msg.warning : "Download warning";
+      setStatus(truncate(`Warning: ${warning}`), "!", "#9a6700");
+      return;
+    }
+
     if (type === "done") {
       setStatus(`Download completed for ${watchId}`, "OK", "#137333");
       cleanup();

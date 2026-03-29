@@ -10,6 +10,7 @@ import traceback
 
 
 DOWNLOAD_DIR = "/home/user/Downloads"
+COOKIE_SOURCE = os.environ.get("YTDLP_FIREFOX_COOKIE_SOURCE", "firefox")
 YT_ID_REGEX = re.compile(r"^[A-Za-z0-9_-]{11}$")
 PROGRESS_REGEX = re.compile(r"\[download\]\s+([0-9]+(?:\.[0-9]+)?)%")
 MAX_DETAIL_LINES = 20
@@ -66,6 +67,11 @@ def classify_failure(last_lines, return_code):
     )
 
 
+def has_cookie_error(last_lines):
+    detail_blob = "\n".join(last_lines).lower()
+    return "cookies" in detail_blob and "firefox" in detail_blob
+
+
 def send_error(error, code, hint=None, details=None, watch_id=None):
     payload = {
         "type": "error",
@@ -89,6 +95,38 @@ def send_error(error, code, hint=None, details=None, watch_id=None):
     send_message(payload)
 
 
+def run_process(command):
+    process = subprocess.Popen(
+        command,
+        cwd=DOWNLOAD_DIR,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+        universal_newlines=True,
+    )
+
+    last_lines = []
+    stdout = process.stdout
+    if stdout is None:
+        raise RuntimeError("Failed to capture yt-dlp output")
+
+    for line in stdout:
+        line = line.strip()
+        if not line:
+            continue
+
+        last_lines.append(line)
+        if len(last_lines) > MAX_DETAIL_LINES:
+            last_lines.pop(0)
+
+        progress_match = PROGRESS_REGEX.search(line)
+        if progress_match:
+            send_message({"type": "progress", "percent": float(progress_match.group(1))})
+
+    return process.wait(), last_lines
+
+
 def run_download(watch_id):
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
     video_url = f"https://www.youtube.com/watch?v={watch_id}"
@@ -96,7 +134,8 @@ def run_download(watch_id):
     command = [
         "yt-dlp",
         "--cookies-from-browser",
-        "firefox",
+        COOKIE_SOURCE,
+        "--no-playlist",
         "--newline",
         video_url,
     ]
@@ -104,15 +143,7 @@ def run_download(watch_id):
     send_message({"type": "started", "watchId": watch_id})
 
     try:
-        process = subprocess.Popen(
-            command,
-            cwd=DOWNLOAD_DIR,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-            universal_newlines=True,
-        )
+        return_code, last_lines = run_process(command)
     except FileNotFoundError:
         send_error(
             "yt-dlp command not found",
@@ -138,26 +169,16 @@ def run_download(watch_id):
         )
         return
 
-    last_lines = []
-
-    stdout = process.stdout
-    if stdout is None:
-        raise RuntimeError("Failed to capture yt-dlp output")
-
-    for line in stdout:
-        line = line.strip()
-        if not line:
-            continue
-
-        last_lines.append(line)
-        if len(last_lines) > 10:
-            last_lines.pop(0)
-
-        progress_match = PROGRESS_REGEX.search(line)
-        if progress_match:
-            send_message({"type": "progress", "percent": float(progress_match.group(1))})
-
-    return_code = process.wait()
+    if return_code != 0 and has_cookie_error(last_lines):
+        send_message(
+            {
+                "type": "warning",
+                "code": "COOKIE_READ_FAILED",
+                "warning": "Could not read Firefox cookies. Retrying without cookies.",
+            }
+        )
+        fallback_command = ["yt-dlp", "--no-playlist", "--newline", video_url]
+        return_code, last_lines = run_process(fallback_command)
 
     if return_code == 0:
         send_message({"type": "done", "watchId": watch_id})

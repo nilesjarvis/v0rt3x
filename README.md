@@ -48,3 +48,4 @@ The command is run from `/home/user/Downloads` through a native messaging host.
 - If native messaging fails, reinstall by rerunning `install_native_host.sh`.
 - Error tooltips now include an error code, hint, and final yt-dlp output line for debugging.
 - For full diagnostics payloads, check Firefox extension background logs in `about:debugging`.
+- If Firefox cookies cannot be read, the host automatically retries download without cookies.
